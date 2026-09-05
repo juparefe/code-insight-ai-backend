@@ -49,6 +49,8 @@ export class AnalyzeRepositoryUseCase {
         throw error;
       }
 
+      console.error("Repository analysis failed with an unexpected error:", error);
+
       throw new AppError(
         500,
         "Repository analysis failed",

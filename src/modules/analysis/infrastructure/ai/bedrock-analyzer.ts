@@ -9,6 +9,7 @@ import type { AiAnalyzer } from "../../application/ports/ai-analyzer.js";
 import type { RepositoryAnalysis } from "../../application/models/repository-analysis.js";
 import { repositoryAnalysisSchema } from "../../application/models/repository-analysis.schema.js";
 import { ZodError } from "zod/v3";
+import { AppError } from "../../../../shared/errors/app-error.js";
 
 export class BedrockAnalyzer implements AiAnalyzer {
   private readonly client: BedrockRuntimeClient;
@@ -44,7 +45,12 @@ export class BedrockAnalyzer implements AiAnalyzer {
       },
     });
 
-    const response = await this.client.send(command);
+    let response;
+    try {
+      response = await this.client.send(command);
+    } catch (error) {
+      throw this.mapAwsError(error);
+    }
 
     const responseText =
       response.output?.message?.content
@@ -75,6 +81,43 @@ export class BedrockAnalyzer implements AiAnalyzer {
         }`,
       );
     }
+  }
+
+  private mapAwsError(error: unknown): Error {
+    if (!(error instanceof Error)) {
+      return new Error("Unknown error while calling AWS Bedrock");
+    }
+
+    const authErrorNames = [
+      "CredentialsProviderError",
+      "ExpiredTokenException",
+      "ExpiredToken",
+      "InvalidSignatureException",
+      "UnrecognizedClientException",
+      "InvalidIdentityTokenException",
+    ];
+
+    if (authErrorNames.includes(error.name)) {
+      return new AppError(
+        503,
+        "AWS credentials are missing or expired. Re-authenticate (e.g. run 'aws sso login') and restart the server.",
+        "AWS_AUTHENTICATION_REQUIRED",
+      );
+    }
+
+    if (error.name === "AccessDeniedException") {
+      return new AppError(
+        502,
+        "AWS credentials are valid but not authorized to invoke the configured Bedrock model.",
+        "AWS_ACCESS_DENIED",
+      );
+    }
+
+    return new AppError(
+      502,
+      `AWS Bedrock request failed: ${error.message}`,
+      "AI_PROVIDER_ERROR",
+    );
   }
 
   private buildPrompt(context: AiAnalysisContext): string {
