@@ -14,6 +14,7 @@ const envSchema = z.object({
   MAX_REPOSITORY_FILES: z.coerce.number().int().positive().default(10),
   MAX_REPOSITORY_SIZE_MB: z.coerce.number().positive().default(1),
   ANALYSIS_JOBS_QUEUE_URL: z.string().url(),
+  ANALYSIS_JOBS_TABLE_NAME: z.string(),
 });
 
 export const env = envSchema.parse(process.env);

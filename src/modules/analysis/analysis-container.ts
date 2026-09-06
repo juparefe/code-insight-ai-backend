@@ -11,7 +11,6 @@ import { AiAnalysisContextBuilder } from "./application/services/ai-analysis-con
 import { SourceCodeContextBuilder } from "./application/services/source-code-context-builder.js";
 import { BedrockAnalyzer } from "./infrastructure/ai/bedrock-analyzer.js";
 import { env } from "../../config/env.js";
-import { InMemoryAnalysisJobRepository } from "./infrastructure/jobs/in-memory-analysis-job-repository.js";
 import { GetAnalysisJob } from "./application/use-cases/get-analysis-job.use-case.js";
 import { UpdateAnalysisJob } from "./application/use-cases/update-analysis-job.use-case.js";
 import { CreateAnalysisJob } from "./application/use-cases/create-analysis-job.use-case.js";
@@ -19,6 +18,8 @@ import { GetAnalysisJobController } from "./interfaces/http/get-analysis-job.con
 import { FilesystemRepositoryClassifier } from "./infrastructure/repository/repository-classifier.js";
 import { ProcessAnalysisRequest } from "./application/use-cases/process-analysis-request.use-case.js";
 import { SqsAnalysisJobQueue } from "./infrastructure/jobs/sqs-analysis-job-queue.js";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { DynamoDbAnalysisJobRepository } from "./infrastructure/jobs/dynamodb-analysis-job-repository.js";
 
 const aiAnalysisContextBuilder = new AiAnalysisContextBuilder();
 const bedrockAnalyzer = new BedrockAnalyzer(
@@ -39,7 +40,14 @@ const analysisJobQueue = new SqsAnalysisJobQueue(
   env.ANALYSIS_JOBS_QUEUE_URL,
 );
 const repositoryWorkspace = new FilesystemRepositoryWorkspace();
-const analysisJobRepository = new InMemoryAnalysisJobRepository();
+const dynamoDbClient = new DynamoDBClient({
+  region: env.AWS_REGION,
+});
+
+const analysisJobRepository = new DynamoDbAnalysisJobRepository(
+  env.ANALYSIS_JOBS_TABLE_NAME,
+  dynamoDbClient,
+);
 const staticAnalyzer = new RepositoryStaticAnalyzer(
   componentDetector,
   endpointDetector,
