@@ -8,12 +8,11 @@ import type {
 export class ImportantFileDetector {
   detect(files: FileInfo[]): ImportantFile[] {
     return files.flatMap((file) => {
-      const normalizedPath = file.path
-        .replaceAll('\\', '/')
-        .toLowerCase();
+      const normalizedPath = file.path.replaceAll('\\', '/');
 
       const fileName = path
-        .basename(normalizedPath);
+        .basename(normalizedPath)
+        .toLowerCase();
 
       const result = this.detectFile(
         fileName,

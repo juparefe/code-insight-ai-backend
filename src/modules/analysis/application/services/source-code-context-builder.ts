@@ -23,9 +23,13 @@ export class SourceCodeContextBuilder {
     const results: SourceFileContext[] = [];
 
     for (const file of filesToAnalyze) {
-      const fullPath = path.join(repositoryPath, file);
+      const resolvedPath = await this.resolvePath(repositoryPath, file);
 
-      const content = await fs.readFile(fullPath, "utf-8");
+      if (!resolvedPath) {
+        continue;
+      }
+
+      const content = await fs.readFile(resolvedPath, "utf-8");
 
       results.push({
         path: file,
@@ -34,6 +38,57 @@ export class SourceCodeContextBuilder {
     }
 
     return results;
+  }
+
+  /**
+   * Resolves a repository-relative path against the real filesystem.
+   *
+   * The static analysis records paths as they were read from disk, but
+   * upstream detectors may still hand us a path whose casing differs from
+   * the actual entry (for example a lowercased `readme.md`). On a
+   * case-insensitive filesystem (Windows, macOS default) that read would
+   * succeed; on Linux (AWS Lambda) it fails with ENOENT. Here we first try
+   * the path verbatim and, only if that misses, walk it segment by segment
+   * matching each entry case-insensitively.
+   *
+   * Returns the absolute path to read, or `undefined` when no matching
+   * file exists so the caller can skip it instead of aborting the analysis.
+   */
+  private async resolvePath(
+    repositoryPath: string,
+    relativePath: string,
+  ): Promise<string | undefined> {
+    const directPath = path.join(repositoryPath, relativePath);
+
+    if (await fs.pathExists(directPath)) {
+      return directPath;
+    }
+
+    const segments = relativePath.split(/[\\/]+/).filter(Boolean);
+
+    let currentPath = repositoryPath;
+
+    for (const segment of segments) {
+      let entries: string[];
+
+      try {
+        entries = await fs.readdir(currentPath);
+      } catch {
+        return undefined;
+      }
+
+      const match = entries.find(
+        (entry) => entry.toLowerCase() === segment.toLowerCase(),
+      );
+
+      if (!match) {
+        return undefined;
+      }
+
+      currentPath = path.join(currentPath, match);
+    }
+
+    return currentPath;
   }
 
   private selectFiles(staticAnalysis: StaticAnalysisResult): string[] {
