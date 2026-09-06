@@ -8,6 +8,7 @@ import type { SourceCodeContextBuilder } from "../services/source-code-context-b
 import type { AiAnalyzer } from "../ports/ai-analyzer.js";
 import type { RepositoryAnalysis } from "../models/repository-analysis.js";
 import { OperationTimer } from "../../../../shared/utils/operation-timer.js";
+import type { RepositoryClassifier } from "../ports/repository-classifier.js";
 
 export interface AnalyzeRepositoryInput {
   source: RepositorySource;
@@ -21,6 +22,7 @@ export class AnalyzeRepositoryUseCase {
     private readonly repositoryWorkspace: RepositoryWorkspace,
     private readonly sourceCodeContextBuilder: SourceCodeContextBuilder,
     private readonly staticAnalyzer: StaticAnalyzer,
+    private readonly repositoryClassifier: RepositoryClassifier,
   ) {}
 
   async execute(input: AnalyzeRepositoryInput): Promise<RepositoryAnalysis> {
@@ -34,6 +36,16 @@ export class AnalyzeRepositoryUseCase {
       repositoryPath = await this.repositoryFetcher.fetch(input.source);
       fetchTimer.end();
       console.log(`Repository available at: ${repositoryPath}`);
+      
+      const classificationTimer = new OperationTimer("Repository classification");
+      const classification = await this.repositoryClassifier.classify(repositoryPath);
+      classificationTimer.end();
+      const sizeMb = classification.sizeBytes / (1024*1024);
+      console.log(`Repository classification: files=${classification.fileCount}, ` +
+        `sizeBytes=${classification.sizeBytes}, ` +
+        `sizeMb=${sizeMb}, ` +
+        `isLarge=${classification.isLarge}`
+      );
 
       const staticTimer = new OperationTimer("Static analysis");
       const staticAnalysis = await this.staticAnalyzer.analyze(repositoryPath);
@@ -61,7 +73,10 @@ export class AnalyzeRepositoryUseCase {
         throw error;
       }
 
-      console.error("Repository analysis failed with an unexpected error:", error);
+      console.error(
+        "Repository analysis failed with an unexpected error:",
+        error,
+      );
 
       throw new AppError(
         500,
