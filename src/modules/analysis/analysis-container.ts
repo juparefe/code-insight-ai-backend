@@ -1,6 +1,6 @@
+import { SQSClient } from "@aws-sdk/client-sqs";
 import { AnalyzeRepositoryUseCase } from "./application/use-cases/analyze-repository.use-case.js";
 import { AnalyzeRepositoryController } from "./interfaces/http/analyze-repository.controller.js";
-
 import { GitHubRepositoryFetcher } from "../repository/infrastructure/github/github-repository-fetcher.js";
 import { FilesystemRepositoryWorkspace } from "../repository/infrastructure/github/filesystem-repository-workspace.js";
 import { RepositoryStaticAnalyzer } from "./infrastructure/static-analysis/repository-static-analyzer.js";
@@ -18,6 +18,7 @@ import { CreateAnalysisJob } from "./application/use-cases/create-analysis-job.u
 import { GetAnalysisJobController } from "./interfaces/http/get-analysis-job.controller.js";
 import { FilesystemRepositoryClassifier } from "./infrastructure/repository/repository-classifier.js";
 import { ProcessAnalysisRequest } from "./application/use-cases/process-analysis-request.use-case.js";
+import { SqsAnalysisJobQueue } from "./infrastructure/jobs/sqs-analysis-job-queue.js";
 
 const aiAnalysisContextBuilder = new AiAnalysisContextBuilder();
 const bedrockAnalyzer = new BedrockAnalyzer(
@@ -29,6 +30,14 @@ const endpointDetector = new EndpointDetector();
 const importantFileDetector = new ImportantFileDetector();
 const repositoryClassifier = new FilesystemRepositoryClassifier();
 const repositoryFetcher = new GitHubRepositoryFetcher();
+const sqsClient = new SQSClient({
+  region: env.AWS_REGION,
+});
+
+const analysisJobQueue = new SqsAnalysisJobQueue(
+  sqsClient,
+  env.ANALYSIS_JOBS_QUEUE_URL,
+);
 const repositoryWorkspace = new FilesystemRepositoryWorkspace();
 const analysisJobRepository = new InMemoryAnalysisJobRepository();
 const staticAnalyzer = new RepositoryStaticAnalyzer(
@@ -56,6 +65,7 @@ const processAnalysisRequest = new ProcessAnalysisRequest(
   repositoryClassifier,
   analyzeRepositoryUseCase,
   createAnalysisJob,
+  analysisJobQueue,
 );
 
 export const analyzeRepositoryController = new AnalyzeRepositoryController(

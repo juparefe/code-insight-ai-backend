@@ -12,6 +12,7 @@ import type { RepositoryClassifier } from "../ports/repository-classifier.js";
 import {
   AnalyzeRepositoryUseCase,
 } from "./analyze-repository.use-case.js";
+import type { AnalysisJobQueue } from "../ports/analysis-job-queue.js";
 
 export interface ProcessAnalysisRequestInput {
   source: RepositorySource;
@@ -34,6 +35,7 @@ export class ProcessAnalysisRequest {
     private readonly repositoryClassifier: RepositoryClassifier,
     private readonly analyzeRepositoryUseCase: AnalyzeRepositoryUseCase,
     private readonly createAnalysisJob: CreateAnalysisJob,
+    private readonly analysisJobQueue: AnalysisJobQueue,
   ) {}
 
   async execute(
@@ -72,6 +74,11 @@ export class ProcessAnalysisRequest {
 
       if (classification.isLarge) {
         const job = await this.createAnalysisJob.execute();
+
+        await this.analysisJobQueue.send({
+          jobId: job.id,
+          source: input.source,
+        });
 
         return {
           type: "ASYNC",
