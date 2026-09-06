@@ -4,6 +4,7 @@ import type {
   RepositoryClassification,
   RepositoryClassifier,
 } from "../../application/ports/repository-classifier.js";
+import { env } from "../../../../config/env.js";
 
 export class FilesystemRepositoryClassifier implements RepositoryClassifier {
   async classify(repositoryPath: string): Promise<RepositoryClassification> {
@@ -13,11 +14,15 @@ export class FilesystemRepositoryClassifier implements RepositoryClassifier {
       const stats = await fs.stat(file);
       sizeBytes += stats.size;
     }
-    const isLarge = false;
+    const sizeMb = sizeBytes / (1024 * 1024);
+    const isLarge =
+      files.length > env.MAX_REPOSITORY_FILES ||
+      sizeMb > env.MAX_REPOSITORY_SIZE_MB;
 
     return {
       fileCount: files.length,
       sizeBytes,
+      sizeMb,
       isLarge,
     };
   }

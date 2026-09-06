@@ -8,10 +8,14 @@ import type { SourceCodeContextBuilder } from "../services/source-code-context-b
 import type { AiAnalyzer } from "../ports/ai-analyzer.js";
 import type { RepositoryAnalysis } from "../models/repository-analysis.js";
 import { OperationTimer } from "../../../../shared/utils/operation-timer.js";
-import type { RepositoryClassifier } from "../ports/repository-classifier.js";
 
 export interface AnalyzeRepositoryInput {
   source: RepositorySource;
+}
+
+export interface AnalyzeRepositoryFromPathInput {
+  source: RepositorySource;
+  repositoryPath: string;
 }
 
 export class AnalyzeRepositoryUseCase {
@@ -22,31 +26,49 @@ export class AnalyzeRepositoryUseCase {
     private readonly repositoryWorkspace: RepositoryWorkspace,
     private readonly sourceCodeContextBuilder: SourceCodeContextBuilder,
     private readonly staticAnalyzer: StaticAnalyzer,
-    private readonly repositoryClassifier: RepositoryClassifier,
   ) {}
 
   async execute(input: AnalyzeRepositoryInput): Promise<RepositoryAnalysis> {
     let repositoryPath: string | undefined;
-    const source = input.source;
-    const { url, type } = source;
-    const totalTimer = new OperationTimer("Total analysis");
-
     try {
       const fetchTimer = new OperationTimer("Repository fetch");
       repositoryPath = await this.repositoryFetcher.fetch(input.source);
       fetchTimer.end();
       console.log(`Repository available at: ${repositoryPath}`);
-      
-      const classificationTimer = new OperationTimer("Repository classification");
-      const classification = await this.repositoryClassifier.classify(repositoryPath);
-      classificationTimer.end();
-      const sizeMb = classification.sizeBytes / (1024*1024);
-      console.log(`Repository classification: files=${classification.fileCount}, ` +
-        `sizeBytes=${classification.sizeBytes}, ` +
-        `sizeMb=${sizeMb}, ` +
-        `isLarge=${classification.isLarge}`
+
+      return await this.executeFromPath({
+        source: input.source,
+        repositoryPath,
+      });
+    } catch (error) {
+      if (error instanceof AppError) {
+        throw error;
+      }
+
+      console.error(
+        "Repository analysis failed with an unexpected error:",
+        error,
       );
 
+      throw new AppError(
+        500,
+        "Repository analysis failed",
+        "REPOSITORY_ANALYSIS_FAILED",
+      );
+    } finally {
+      if (repositoryPath) {
+        await this.repositoryWorkspace.cleanup(repositoryPath);
+      }
+    }
+  }
+
+  async executeFromPath(
+    input: AnalyzeRepositoryFromPathInput,
+  ): Promise<RepositoryAnalysis> {
+    const { source, repositoryPath } = input;
+    const { url, type } = source;
+    const totalTimer = new OperationTimer("Total analysis");
+    try {
       const staticTimer = new OperationTimer("Static analysis");
       const staticAnalysis = await this.staticAnalyzer.analyze(repositoryPath);
       staticTimer.end();
@@ -83,10 +105,6 @@ export class AnalyzeRepositoryUseCase {
         "Repository analysis failed",
         "REPOSITORY_ANALYSIS_FAILED",
       );
-    } finally {
-      if (repositoryPath) {
-        await this.repositoryWorkspace.cleanup(repositoryPath);
-      }
     }
   }
 }

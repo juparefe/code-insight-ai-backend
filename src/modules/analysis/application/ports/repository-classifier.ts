@@ -1,6 +1,7 @@
 export interface RepositoryClassification {
     fileCount: number;
     sizeBytes: number;
+    sizeMb: number;
     isLarge: boolean;
 }
 
