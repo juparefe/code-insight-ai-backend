@@ -40,20 +40,6 @@ export class SourceCodeContextBuilder {
     return results;
   }
 
-  /**
-   * Resolves a repository-relative path against the real filesystem.
-   *
-   * The static analysis records paths as they were read from disk, but
-   * upstream detectors may still hand us a path whose casing differs from
-   * the actual entry (for example a lowercased `readme.md`). On a
-   * case-insensitive filesystem (Windows, macOS default) that read would
-   * succeed; on Linux (AWS Lambda) it fails with ENOENT. Here we first try
-   * the path verbatim and, only if that misses, walk it segment by segment
-   * matching each entry case-insensitively.
-   *
-   * Returns the absolute path to read, or `undefined` when no matching
-   * file exists so the caller can skip it instead of aborting the analysis.
-   */
   private async resolvePath(
     repositoryPath: string,
     relativePath: string,

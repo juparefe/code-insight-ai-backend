@@ -1,23 +1,7 @@
 export interface OperationTimerOptions {
-  /**
-   * Prefix that groups the log line in CloudWatch, e.g. `[ANALYSIS]`.
-   * Defaults to `ANALYSIS`.
-   */
   namespace?: string;
 }
 
-/**
- * Measures how long an operation takes and emits a CloudWatch-friendly log
- * line when {@link OperationTimer.end} is called:
- *
- * ```
- * [ANALYSIS] Repository fetch completed
- * durationMs=8421
- * ```
- *
- * The `key=value` pairs on the message make it trivial to build metric
- * filters or query the duration in CloudWatch Logs Insights.
- */
 export class OperationTimer {
   private readonly startedAt = Date.now();
   private readonly namespace: string;
