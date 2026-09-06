@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import { z } from 'zod';
+import os from 'node:os';
 
 const envSchema = z.object({
   AWS_REGION: z.string().default('us-east-1'),
@@ -14,7 +15,7 @@ const envSchema = z.object({
     .positive()
     .default(3000),
 
-  TEMP_DIRECTORY: z.string().default('./tmp'),
+  TEMP_DIRECTORY: z.string().default(os.tmpdir()),
 });
 
 export const env = envSchema.parse(process.env);
