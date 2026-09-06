@@ -1,4 +1,4 @@
-import { AnalyzeRepositoryUseCase } from "./application/analyze-repository.use-case.js";
+import { AnalyzeRepositoryUseCase } from "./application/use-cases/analyze-repository.use-case.js";
 import { AnalyzeRepositoryController } from "./interfaces/http/analyze-repository.controller.js";
 
 import { GitHubRepositoryFetcher } from "../repository/infrastructure/github/github-repository-fetcher.js";
@@ -11,6 +11,11 @@ import { AiAnalysisContextBuilder } from "./application/services/ai-analysis-con
 import { SourceCodeContextBuilder } from "./application/services/source-code-context-builder.js";
 import { BedrockAnalyzer } from "./infrastructure/ai/bedrock-analyzer.js";
 import { env } from "../../config/env.js";
+import { InMemoryAnalysisJobRepository } from "./infrastructure/jobs/in-memory-analysis-job-repository.js";
+import { GetAnalysisJob } from "./application/use-cases/get-analysis-job.use-case.js";
+import { UpdateAnalysisJob } from "./application/use-cases/update-analysis-job.js";
+import { CreateAnalysisJob } from "./application/use-cases/create-analysis-job.js";
+import { GetAnalysisJobController } from "./interfaces/http/get-analysis-job.controller.js";
 
 const aiAnalysisContextBuilder = new AiAnalysisContextBuilder();
 const bedrockAnalyzer = new BedrockAnalyzer(
@@ -22,6 +27,7 @@ const endpointDetector = new EndpointDetector();
 const importantFileDetector = new ImportantFileDetector();
 const repositoryFetcher = new GitHubRepositoryFetcher();
 const repositoryWorkspace = new FilesystemRepositoryWorkspace();
+const analysisJobRepository = new InMemoryAnalysisJobRepository();
 const staticAnalyzer = new RepositoryStaticAnalyzer(
   componentDetector,
   endpointDetector,
@@ -37,7 +43,14 @@ const analyzeRepositoryUseCase = new AnalyzeRepositoryUseCase(
   sourceCodeContextBuilder,
   staticAnalyzer,
 );
+const createAnalysisJob = new CreateAnalysisJob(analysisJobRepository);
+const updateAnalysisJob = new UpdateAnalysisJob(analysisJobRepository);
+const getAnalysisJob = new GetAnalysisJob(analysisJobRepository);
 
 export const analyzeRepositoryController = new AnalyzeRepositoryController(
   analyzeRepositoryUseCase,
+);
+
+export const getAnalysisJobController = new GetAnalysisJobController(
+  getAnalysisJob,
 );

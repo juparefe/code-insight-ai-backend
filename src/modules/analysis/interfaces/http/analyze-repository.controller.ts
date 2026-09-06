@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
 
 import { analyzeRepositorySchema } from './analyze-repository.dto.js';
-import { AnalyzeRepositoryUseCase } from '../../application/analyze-repository.use-case.js';
+import { AnalyzeRepositoryUseCase } from '../../application/use-cases/analyze-repository.use-case.js';
 
 export class AnalyzeRepositoryController {
   constructor(

@@ -1,7 +1,6 @@
 export type AnalysisJobStatus =
   | 'PENDING'
-  | 'DOWNLOADING'
-  | 'ANALYZING'
+  | 'PROCESSING'
   | 'COMPLETED'
   | 'FAILED';
 
