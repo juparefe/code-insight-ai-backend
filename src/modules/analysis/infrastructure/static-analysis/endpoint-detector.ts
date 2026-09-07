@@ -157,8 +157,6 @@ export class EndpointDetector {
       return "";
     }
 
-    const routerName = match[1];
-
     const routerFileName = path.basename(filePath).replace(/\.[^.]+$/, "");
 
     const mount = mounts.find((item) => {

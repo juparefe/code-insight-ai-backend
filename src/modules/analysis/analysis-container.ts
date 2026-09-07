@@ -12,7 +12,6 @@ import { SourceCodeContextBuilder } from "./application/services/source-code-con
 import { BedrockAnalyzer } from "./infrastructure/ai/bedrock-analyzer.js";
 import { env } from "../../config/env.js";
 import { GetAnalysisJob } from "./application/use-cases/get-analysis-job.use-case.js";
-import { UpdateAnalysisJob } from "./application/use-cases/update-analysis-job.use-case.js";
 import { CreateAnalysisJob } from "./application/use-cases/create-analysis-job.use-case.js";
 import { GetAnalysisJobController } from "./interfaces/http/get-analysis-job.controller.js";
 import { FilesystemRepositoryClassifier } from "./infrastructure/repository/repository-classifier.js";
@@ -64,7 +63,6 @@ const analyzeRepositoryUseCase = new AnalyzeRepositoryUseCase(
   staticAnalyzer,
 );
 const createAnalysisJob = new CreateAnalysisJob(analysisJobRepository);
-const updateAnalysisJob = new UpdateAnalysisJob(analysisJobRepository);
 const getAnalysisJob = new GetAnalysisJob(analysisJobRepository);
 
 const processAnalysisRequest = new ProcessAnalysisRequest(
