@@ -145,6 +145,20 @@ export class BedrockAnalyzer implements AiAnalyzer {
       13. Do not include explanations outside the JSON object.
       14. Return ONLY valid JSON.
 
+      OUTPUT LANGUAGE:
+      15. Write every piece of natural-language text that you generate in Spanish. This applies to:
+        "functionalDescription", "architecture.evidence[]", "technologies[].role",
+        "technologies[].evidence[]", "components[].responsibility", "components[].evidence[]",
+        "findings[].title", "findings[].description", "findings[].evidence[]",
+        "recommendations[].title", "recommendations[].description", "recommendations[].reason".
+      16. Do NOT translate, rename, or otherwise alter verbatim identifiers taken from the repository:
+        file names and paths (including "components[].path"), directory names, class / function /
+        variable names, package and dependency names, technology names ("technologies[].name"),
+        environment variable names, and code snippets. Keep them exactly as they appear in the evidence,
+        even when they are quoted inside a Spanish sentence.
+      17. Keep all JSON keys and all enum values (pattern, severity, category, priority) exactly as
+        specified below, in English and uppercase.
+
       The following architecture patterns are allowed:
       - MONOLITH
       - MVC
