@@ -40,7 +40,7 @@ export class BedrockAnalyzer implements AiAnalyzer {
       ],
 
       inferenceConfig: {
-        maxTokens: 4000,
+        maxTokens: 8000,
         temperature: 0.2,
       },
     });
