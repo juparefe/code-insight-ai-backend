@@ -12,6 +12,7 @@
     "test": "jest --runInBand",
     "test:watch": "jest --watch",
     "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "format": "prettier --write ."
   },
   "keywords": [],
@@ -42,6 +43,7 @@
     "@types/supertest": "^7.2.1",
     "eslint": "^10.10.0",
     "jest": "^30.5.1",
+    "jiti": "^2.6.0",
     "prettier": "^3.9.6",
     "supertest": "^7.2.2",
     "ts-jest": "^29.4.12",

@@ -68,17 +68,19 @@ export class BedrockAnalyzer implements AiAnalyzer {
       return repositoryAnalysisSchema.parse(parsedResponse);
     } catch (error) {
       if (error instanceof SyntaxError) {
-        throw new Error("AI analysis returned invalid JSON");
+        throw new Error("AI analysis returned invalid JSON", { cause: error });
       }
       if (error instanceof ZodError) {
         throw new Error(
           `AI analysis response does not match the expected contract: ${error.message}`,
+          { cause: error },
         );
       }
       throw new Error(
         `Unexpected error while processing AI analysis: ${
           error instanceof Error ? error.message : "Unknown error"
         }`,
+        { cause: error },
       );
     }
   }

@@ -46,7 +46,7 @@ export class GitHubRepositoryFetcher implements RepositoryFetcher {
       return repositoryPath;
     } catch (error) {
       await fs.remove(repositoryPath);
-
+      console.error("Error fetching GitHub repository:", error);
       throw new AppError(
         422,
         "Unable to retrieve the GitHub repository",

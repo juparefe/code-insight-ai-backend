@@ -1,0 +1,63 @@
+name: deploy (backend)
+
+on:
+  push:
+    branches: ["main"]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    name: Package + Deploy Lambda
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Package lambda.zip
+        run: |
+          rm -f lambda.zip
+          zip -r lambda.zip dist node_modules package.json
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_BACKEND_DEPLOY_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Deploy API Lambda
+        run: |
+          aws lambda update-function-code \
+            --function-name code-insight-ai-dev \
+            --zip-file fileb://lambda.zip
+
+      - name: Wait until API Lambda is updated
+        run: |
+          aws lambda wait function-updated \
+            --function-name code-insight-ai-dev
+
+      - name: Deploy Worker Lambda
+        run: |
+          aws lambda update-function-code \
+            --function-name code-insight-ai-dev-worker \
+            --zip-file fileb://lambda.zip
+
+      - name: Wait until Worker Lambda is updated
+        run: |
+          aws lambda wait function-updated \
+            --function-name code-insight-ai-dev-worker
