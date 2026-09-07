@@ -40,7 +40,7 @@ export class BedrockAnalyzer implements AiAnalyzer {
       ],
 
       inferenceConfig: {
-        maxTokens: 8000,
+        maxTokens: 20000,
         temperature: 0.2,
       },
     });
@@ -61,6 +61,10 @@ export class BedrockAnalyzer implements AiAnalyzer {
     if (!responseText) {
       throw new Error("Bedrock returned an empty AI response");
     }
+    console.log("[AI] Response metadata", {
+      stopReason: response.stopReason,
+      responseLength: responseText.length,
+    });
     const json = this.cleanJsonResponse(responseText);
 
     try {
